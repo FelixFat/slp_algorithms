@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-import Int_Library as lib
+import ALG_library as lib
 
 
 class CDS_alg:
@@ -24,6 +24,11 @@ class CDS_alg:
         self.point_ = np.array([])
 
     def fit(self):
+        """
+        Cluster Deviation Search Algorithm fit
+        :return: None
+        """
+
         point_cloud = self.data_.copy()
 
         clusters = self.__zone_clustering(in_pc=point_cloud)

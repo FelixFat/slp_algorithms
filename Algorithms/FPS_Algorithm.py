@@ -3,28 +3,28 @@ import warnings
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-import Int_Library as lib
+import ALG_library as lib
 
 class FPS_alg:
     """
     Flat Plane Search Algorithm
     """
 
-    def __init__(self, in_data=np.empty([0, 3])):
+    def __init__(self, in_data=np.empty([0, 3]), in_scale=0.01):
         self.data_ = in_data.copy()
+        self.scale_ = in_scale
 
         self.inliers_ = np.array([])
         self.equation_ = np.array([])
 
-        self.scale_ = 0.01
-
         self.slope_ = 0.0
         self.area_ = 0.0
+
         self.point_ = np.array([])
 
     def fit(self):
         """
-        Weighted Area Search algorithm call
+        Flat Plane Search Algorithm fit
         :return: None
         """
 
