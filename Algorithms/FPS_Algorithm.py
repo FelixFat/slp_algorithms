@@ -67,6 +67,9 @@ class FPS_alg:
             max_iter=1000
         )
 
+        if equation[2] < 0:
+            equation = np.array([equation[1], equation[0], -equation[2], -equation[3]])
+
         return equation, inliers
 
     def __zone_slope(self, in_eq):
@@ -152,6 +155,7 @@ if __name__ == '__main__':
     input[2] = [1000, -1000, 0.5]
     input[5] = [-1000, -1001, 0.5]
     input[10] = [-1001, -1000, 0.5]
+    input = input + np.random.normal(0, 0.02, input.shape)
 
     alg = FPS_alg(in_data=input)
     alg.fit()
