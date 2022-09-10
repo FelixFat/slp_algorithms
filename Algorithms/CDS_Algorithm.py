@@ -6,21 +6,21 @@ import Int_Library as lib
 
 class CDS_alg:
     """
-    Cluster Dispersion Search Algorithm
+    Cluster Deviation Search Algorithm
     """
 
-    def __init__(self, in_data=np.empty([0, 3])):
+    def __init__(self, in_data=np.empty([0, 3]), in_scale=0.01):
         self.data_ = in_data.copy()
+        self.scale_ = in_scale
 
         self.inliers_ = np.array([])
         self.equation_ = np.array([])
 
-        self.scale_ = 0.01
-        self.score_ = 0.0
-
         self.slope_ = 0.0
         self.area_ = 0.0
-        self.scatter_ = 0.0
+        self.deviation_ = 0.0
+
+        self.score_ = 0.0
         self.point_ = np.array([])
 
     def fit(self):
@@ -30,18 +30,18 @@ class CDS_alg:
         for cluster in clusters:
             equation, slope = self.__zone_slope(in_pc=cluster)
             area = self.__zone_area(in_pc=cluster)
-            scatter = self.__zone_scatter(in_pc=cluster, in_eq=equation)
+            deviation = self.__zone_deviation(in_pc=cluster, in_eq=equation)
 
-            score = self.__zone_estimate(in_pc=cluster, in_slope=slope, in_area=area, in_scatter=scatter)
-            print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Scatter: {scatter}. Score: {score}.")
+            score = self.__zone_estimate(in_pc=cluster, in_slope=slope, in_area=area, in_scatter=deviation)
+            print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Deviation: {deviation}. Score: {score}.")
 
             if score > self.score_:
                 self.inliers_ = cluster
                 self.equation_ = equation
-                self.score_ = score
                 self.slope_ = slope
                 self.area_ = area
-                self.scatter_ = scatter
+                self.deviation_ = deviation
+                self.score_ = score
                 self.point_ = self.__point_determination(in_pc=cluster)
 
         return None
@@ -63,12 +63,11 @@ class CDS_alg:
         model.fit(X=in_pc)
 
         num_clusters = set(model.labels_)
-        if -1 in num_clusters:
-            num_clusters.remove(-1)
 
         clusters = []
-        # NEED TO OPTIMIZE (calculations)
         for num in num_clusters:
+            if num == -1: continue
+
             clusters.append(
                 np.array([
                     in_pc[i]
@@ -121,20 +120,21 @@ class CDS_alg:
 
         return equation, slope
 
-    def __zone_scatter(self, in_pc, in_eq):
+    def __zone_deviation(self, in_pc, in_eq):
         """
-        Zone scatter calculation
+        Zone deviation calculation with MSE
         :param in_pc: Input point cloud
         :param in_eq: Input zone equation
-        :return: Zone area
+        :return: Zone deviation
         """
 
-        # Deviation/scatter of points from mean inverse
-        mse_lamb = lambda A, B: np.power(np.sum(A * B), 2)
-        mse = np.sum([mse_lamb(np.append(point, [1.0]), in_eq) for point in in_pc])
-        scatter = mse / len(in_pc)
+        mse = lambda A, B: np.power(np.sum(A * B), 2)
+        deviation = np.sum([
+                mse(np.hstack([point, [1.0]]), in_eq)
+                for point in in_pc
+        ]) / len(in_pc)
 
-        return scatter
+        return deviation
 
     def __zone_estimate(self, in_pc, in_slope, in_area, in_scatter):
         """
@@ -172,4 +172,4 @@ if __name__ == '__main__':
     alg = CDS_alg(in_data=input)
     alg.fit()
 
-    print(f"CDS algorithm result:\n\t- Point: {alg.point_}\n\t- Slope: {alg.slope_}\n\t- Area: {alg.area_}\n\t- Scatter: {alg.scatter_}")
+    print(f"CDS algorithm result:\n\t- Point: {alg.point_}\n\t- Slope: {alg.slope_}\n\t- Area: {alg.area_}\n\t- Deviation: {alg.deviation_}")
