@@ -1,7 +1,10 @@
+import time
+
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-import ALG_library as lib
+import ALG_Library as lib
+from tests.PC_Generation import PC_gen
 
 
 class CDS_alg:
@@ -59,7 +62,7 @@ class CDS_alg:
         """
 
         model = DBSCAN(
-            eps=2,
+            eps=self.scale_ * 1.5,
             min_samples=5,
             metric='euclidean',
             algorithm='kd_tree',
@@ -171,10 +174,13 @@ class CDS_alg:
 
 
 if __name__ == '__main__':
-    input = np.array([list([i, j, 0.5]) for j in range(100) for i in range(100)])
-    input = input + np.random.normal(0, 0.02, input.shape)
+    gen = PC_gen(shape=np.array([640, 480]), step=0.01)
+    cloud = gen.plane_gen(noise=0.001, loss=0.0)
 
-    alg = CDS_alg(in_data=input)
+    time_start = time.time()
+    alg = CDS_alg(in_data=cloud, in_scale=0.01)
     alg.fit()
+    stop_time = time.time() - time_start
 
     print(f"CDS algorithm result:\n\t- Point: {alg.point_}\n\t- Slope: {alg.slope_}\n\t- Area: {alg.area_}\n\t- Deviation: {alg.deviation_}")
+    print(f"Time: {stop_time}")

@@ -1,9 +1,11 @@
+import time
 import warnings
 
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-import ALG_library as lib
+import ALG_Library as lib
+from tests.PC_Generation import PC_gen
 
 class FPS_alg:
     """
@@ -63,7 +65,7 @@ class FPS_alg:
 
         equation, inliers = lib.RANSAC_plane(
             cloud=in_pc,
-            thresh=0.05,
+            thresh=self.scale_ * 1.5,
             max_iter=1000
         )
 
@@ -99,7 +101,7 @@ class FPS_alg:
         """
 
         model = DBSCAN(
-            eps=2,
+            eps=self.scale_ * 1.5,
             min_samples=5,
             metric='euclidean',
             algorithm='kd_tree',
@@ -151,13 +153,13 @@ class FPS_alg:
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
-    input = np.array([np.array([i, j, 0.5]) for j in range(100) for i in range(100)])
-    input[2] = [1000, -1000, 0.5]
-    input[5] = [-1000, -1001, 0.5]
-    input[10] = [-1001, -1000, 0.5]
-    input = input + np.random.normal(0, 0.02, input.shape)
+    gen = PC_gen(shape=np.array([640, 480]), step=0.01)
+    cloud = gen.plane_gen(noise=0.001)
 
-    alg = FPS_alg(in_data=input)
+    time_start = time.time()
+    alg = FPS_alg(in_data=cloud, in_scale=0.01)
     alg.fit()
+    stop_time = time.time() - time_start
 
-    print(f"FPS algorithm result:\n\t- Point: {alg.point_}\n\t- Equation: {alg.equation_}\n\t- Area: {alg.area_}")
+    print(f"FPS algorithm result:\n\t- Point: {alg.point_}\n\t- Slope: {alg.slope_}\n\t- Area: {alg.area_}")
+    print(f"Time: {stop_time}")
