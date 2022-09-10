@@ -10,8 +10,8 @@ class FPS_alg:
     Flat Plane Search Algorithm
     """
 
-    def __init__(self, in_data=np.array([])):
-        self.data_ = in_data
+    def __init__(self, in_data=np.empty([0, 3])):
+        self.data_ = in_data.copy()
 
         self.inliers_ = np.array([])
         self.equation_ = np.array([])
