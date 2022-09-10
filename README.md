@@ -1,8 +1,6 @@
-# Searching algorithms safe landing point
+# Safe landing point searching algorithms 
 
 ## Table of contents
-1. Weighted Area Search Algorithm
-2. Algorithm for Searching by Squares of Heights
-3. Heightmap Search Algorithm
-4. Machine Search Algorithm
-5. Neural Network Search Algorithm
+1. Flat Plane Search Algorithm
+2. Cluster Dispersion Search Algorithm
+3. Squares of Heights Search Algorithm
