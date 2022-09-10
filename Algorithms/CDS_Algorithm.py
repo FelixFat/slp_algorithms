@@ -129,7 +129,7 @@ class CDS_alg:
         :return: Zone area
         """
 
-        # Отклонение/разброс точек от срелней плоскости
+        # Deviation/scatter of points from mean inverse
         mse_lamb = lambda A, B: np.power(np.sum(A * B), 2)
         mse = np.sum([mse_lamb(np.append(point, [1.0]), in_eq) for point in in_pc])
         scatter = mse / len(in_pc)
@@ -166,10 +166,10 @@ class CDS_alg:
 
 
 if __name__ == '__main__':
-    data = np.array([list([i, j, 0.5]) for j in range(100) for i in range(100)])
-    data = data + np.random.normal(0, 0.02, data.shape)  # add noise
+    input = np.array([list([i, j, 0.5]) for j in range(100) for i in range(100)])
+    input = input + np.random.normal(0, 0.02, input.shape)
 
-    alg = CDS_alg(in_data=data)
+    alg = CDS_alg(in_data=input)
     alg.fit()
 
     print(f"CDS algorithm result:\n\t- Point: {alg.point_}\n\t- Slope: {alg.slope_}\n\t- Area: {alg.area_}\n\t- Scatter: {alg.scatter_}")
