@@ -1,10 +1,9 @@
 import warnings
 
 import numpy as np
-import pyransac3d as pyrsc
 from sklearn.cluster import DBSCAN
 
-import library
+import Int_Library as lib
 
 
 class WAS_alg:
@@ -15,17 +14,17 @@ class WAS_alg:
     def __init__(self, in_data=np.array([])):
         self.data_ = in_data
 
-        self.inliers_ = []
-        self.equation_ = []
+        self.inliers_ = np.array([])
+        self.equation_ = np.array([])
 
         self.scale_ = 0.01
 
         self.slope_ = 0.0
         self.area_ = 0.0
         self.score_ = 0.0
-        self.point_ = []
+        self.point_ = np.array([])
 
-    def call(self):
+    def fit(self):
         """
         Weighted Area Search algorithm call
         :return: None
@@ -37,14 +36,14 @@ class WAS_alg:
             equation, inliers = self._plane_detection(in_pc=point_cloud)
             slope = self._zone_slope(in_eq=equation)
 
-            pc = np.array([point_cloud[i] for i in inliers])
+            cloud = np.array([point_cloud[i] for i in inliers])
 
-            clusters = self._zone_clustering(in_pc=pc)
+            clusters = self._zone_clustering(in_pc=cloud)
             for cluster in clusters:
                 area = self._zone_area(in_pc=cluster)
                 score = self._zone_estimate(in_pc=cluster, in_area=area, in_slope=slope)
 
-                print(f">> Equation: {equation}. Parameters: {slope}, {area}, {score}")
+                print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Score: {score}.")
                 if score > self.score_:
                     self.inliers_ = cluster
                     self.equation_ = equation
@@ -63,13 +62,10 @@ class WAS_alg:
         :return: Plane equation, Inliers points
         """
 
-        # NEED TO CHECK (dependence on random)
-        plane = pyrsc.Plane()
-        equation, inliers = plane.fit(
-            pts=in_pc,
+        equation, inliers = lib.RANSAC_plane(
+            cloud=in_pc,
             thresh=0.05,
-            minPoints=100,
-            maxIteration=1000
+            max_iter=1000
         )
 
         return equation, inliers
@@ -116,12 +112,13 @@ class WAS_alg:
         clusters = []
         # NEED TO OPTIMIZE (calculations)
         for num in num_clusters:
-            arr = np.array([
-                in_pc[i]
-                for i in range(len(model.labels_))
-                if model.labels_[i] == num
+            clusters.append(
+                np.array([
+                    in_pc[i]
+                    for i in range(len(model.labels_))
+                    if model.labels_[i] == num
                 ])
-            clusters.append(arr)
+            )
 
         return clusters
 
@@ -147,7 +144,7 @@ class WAS_alg:
 
         # AREA_min = 0.126 m^2
         # ANGLE_max = 15.0 grad
-        est = (in_area / 0.126) * (1.0 - in_slope / 15.0)
+        est = (np.sqrt((0.126 - in_area) ** 2) + np.sqrt((15.0 - in_slope) ** 2)) / 2
 
         return est
 
@@ -159,7 +156,7 @@ class WAS_alg:
         """
 
         # NEED TO CHECK (linearized method)
-        g_median = np.array(library.geometric_median(in_pc))
+        g_median = np.array(lib.geometric_median(in_pc))
 
         return g_median
 
@@ -173,6 +170,6 @@ if __name__ == '__main__':
     input[10] = [-1001, -1000, 0.5]
 
     alg = WAS_alg(in_data=input)
-    alg.call()
+    alg.fit()
 
     print(f"WAS algorithm result:\n\t- Point: {alg.point_}\n\t- Equation: {alg.equation_}\n\t- Area: {alg.area_}")
