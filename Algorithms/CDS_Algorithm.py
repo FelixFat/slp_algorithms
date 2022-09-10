@@ -106,6 +106,8 @@ class CDS_alg:
         d = -np.sum(abc * mean)
 
         equation = np.r_[abc, d] / np.linalg.norm(abc)
+        if equation[2] < 0:
+            equation = np.array([equation[1], equation[0], -equation[2], -equation[3]])
 
         # rad_phi = (a, b) / (magnitude(a) * magnitude(b))
         # grad_phi = abs(arccos(rad_phi) * 180 / PI)
@@ -116,10 +118,6 @@ class CDS_alg:
                 (np.linalg.norm(normal) * np.linalg.norm(equation[:3]))
             ) * 180.0 / np.pi
         )
-
-        if slope > 90.0:
-            slope = np.abs(180 - slope)
-            equation = np.array([equation[1], equation[0], -equation[2], -equation[3]])
 
         return equation, slope
 
