@@ -5,10 +5,9 @@ from sklearn.cluster import DBSCAN
 
 import Int_Library as lib
 
-
-class WAS_alg:
+class FPS_alg:
     """
-    Weighted Area Search Algorithm for SLP search
+    Flat Plane Search Algorithm
     """
 
     def __init__(self, in_data=np.array([])):
@@ -21,7 +20,6 @@ class WAS_alg:
 
         self.slope_ = 0.0
         self.area_ = 0.0
-        self.score_ = 0.0
         self.point_ = np.array([])
 
     def fit(self):
@@ -33,29 +31,30 @@ class WAS_alg:
         point_cloud = self.data_.copy()
 
         while len(point_cloud) >= 0.3 * len(self.data_):
-            equation, inliers = self._plane_detection(in_pc=point_cloud)
-            slope = self._zone_slope(in_eq=equation)
+            equation, inliers = self.__plane_detection(in_pc=point_cloud)
+            slope = self.__zone_slope(in_eq=equation)
 
             cloud = np.array([point_cloud[i] for i in inliers])
 
-            clusters = self._zone_clustering(in_pc=cloud)
+            clusters = self.__zone_clustering(in_pc=cloud)
             for cluster in clusters:
-                area = self._zone_area(in_pc=cluster)
-                score = self._zone_estimate(in_pc=cluster, in_area=area, in_slope=slope)
+                area = self.__zone_area(in_pc=cluster)
 
-                print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Score: {score}.")
-                if score > self.score_:
+                print(f">> Equation: {equation}; Slope: {slope}; Area: {area}.")
+
+                # AREA_min = 0.126 m^2
+                # ANGLE_max = 15.0 grad
+                if (slope <= 15.0 and area >= 0.126) and (slope < self.slope_ or area > self.area_):
                     self.inliers_ = cluster
                     self.equation_ = equation
                     self.slope_ = slope
                     self.area_ = area
-                    self.score_ = score
-                    self.point_ = self._point_determination(in_pc=cluster)
+                    self.point_ = self.__point_determination(in_pc=cluster)
             point_cloud = np.delete(point_cloud, inliers, axis=0)
 
         return None
 
-    def _plane_detection(self, in_pc):
+    def __plane_detection(self, in_pc):
         """
         Plane detection in point cloud with RANSAC algorithm
         :param in_pc: Input point cloud
@@ -70,7 +69,7 @@ class WAS_alg:
 
         return equation, inliers
 
-    def _zone_slope(self, in_eq):
+    def __zone_slope(self, in_eq):
         """
         Zone slope calculation
         :param in_eq: Input equation of plane
@@ -89,7 +88,7 @@ class WAS_alg:
 
         return slope
 
-    def _zone_clustering(self, in_pc):
+    def __zone_clustering(self, in_pc):
         """
         Zones clustering in point cloud with Kd-tree and Euclidean clustering algorithms
         :param in_pc: Input point cloud
@@ -122,7 +121,7 @@ class WAS_alg:
 
         return clusters
 
-    def _zone_area(self, in_pc):
+    def __zone_area(self, in_pc):
         """
         Zone area calculation
         :param in_pc: Input point cloud
@@ -134,28 +133,13 @@ class WAS_alg:
 
         return area
 
-    def _zone_estimate(self, in_pc, in_area, in_slope):
-        """
-        Landing zone estimation
-        :param in_area: Input zone area
-        :param in_slope: Input zone slope
-        :return: Estimate
-        """
-
-        # AREA_min = 0.126 m^2
-        # ANGLE_max = 15.0 grad
-        est = (np.sqrt((0.126 - in_area) ** 2) + np.sqrt((15.0 - in_slope) ** 2)) / 2
-
-        return est
-
-    def _point_determination(self, in_pc):
+    def __point_determination(self, in_pc):
         """
         Landing point determination with geometric median
         :param in_pc: Input point cloud
         :return: Point coordinates
         """
 
-        # NEED TO CHECK (linearized method)
         g_median = np.array(lib.geometric_median(in_pc))
 
         return g_median
@@ -169,7 +153,7 @@ if __name__ == '__main__':
     input[5] = [-1000, -1001, 0.5]
     input[10] = [-1001, -1000, 0.5]
 
-    alg = WAS_alg(in_data=input)
+    alg = FPS_alg(in_data=input)
     alg.fit()
 
-    print(f"WAS algorithm result:\n\t- Point: {alg.point_}\n\t- Equation: {alg.equation_}\n\t- Area: {alg.area_}")
+    print(f"FPS algorithm result:\n\t- Point: {alg.point_}\n\t- Equation: {alg.equation_}\n\t- Area: {alg.area_}")
