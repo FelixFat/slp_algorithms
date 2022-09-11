@@ -79,3 +79,22 @@ def geometric_median(X, eps=1e-5):
             return y1
 
         y = y1
+
+
+def divide_and_conquer(shape):
+    """
+    Divide and Conquer Algorithm
+    :param shape: Frame shape
+    :return: Base frame shape
+    """
+    if shape[0] == shape[1] and (shape[0] != 1.0 and shape[1] != 1.0):
+        return shape
+    elif shape[0] == shape[1] and (shape[0] != 1.0 and shape[1] != 1.0):
+        return None
+
+    if shape[0] > shape[1]:
+        shape[0] -= shape[1]
+    else:
+        shape[1] -= shape[0]
+
+    return divide_and_conquer(shape=shape)

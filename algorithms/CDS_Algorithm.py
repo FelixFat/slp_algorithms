@@ -16,15 +16,15 @@ class CDS_alg:
         self.data_ = in_data.copy()
         self.scale_ = in_scale
 
-        self.inliers_ = np.array([])
-        self.equation_ = np.array([])
+        self.inliers_ = np.empty([0, 3])
+        self.equation_ = np.empty([0, 4])
 
         self.slope_ = 0.0
         self.area_ = 0.0
         self.deviation_ = 0.0
 
         self.score_ = 0.0
-        self.point_ = np.array([])
+        self.point_ = np.empty([0, 3])
 
     def fit(self):
         """
@@ -174,11 +174,14 @@ class CDS_alg:
 
 
 if __name__ == '__main__':
-    gen = PC_gen(shape=np.array([640, 480]), step=0.01)
-    cloud = gen.plane_gen(noise=0.001, loss=0.0)
+    cloud_shape = np.array([640, 480])
+    cloud_step = 0.01
+
+    gen = PC_gen(shape=cloud_shape, step=cloud_step)
+    cloud = gen.plane_gen(hiegh=0.5, noise=0.001, loss=0.0)
 
     time_start = time.time()
-    alg = CDS_alg(in_data=cloud, in_scale=0.01)
+    alg = CDS_alg(in_data=cloud, in_scale=cloud_step)
     alg.fit()
     stop_time = time.time() - time_start
 

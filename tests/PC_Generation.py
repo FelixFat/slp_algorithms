@@ -25,7 +25,7 @@ class PC_gen:
 
         return cloud_id
 
-    def plane_gen(self, noise=0.001, loss=0.0):
+    def plane_gen(self, hiegh=0.5, noise=0.001, loss=0.0):
         """
         Plane point cloud generator
         :param noise: Point cloud noise
@@ -34,7 +34,7 @@ class PC_gen:
         """
 
         cloud = np.array([
-            np.array([i, j, 0.5])
+            np.array([i, j, hiegh])
             for j in np.arange(-self.col_, self.col_, self.step_)
             for i in np.arange(-self.row_, self.row_, self.step_)
         ])
