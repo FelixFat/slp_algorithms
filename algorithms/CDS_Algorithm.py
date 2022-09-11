@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 from sklearn.cluster import DBSCAN
+from sklearn.metrics import mean_squared_error
 
 import ALG_Library as lib
 from tests.PC_Generation import PC_gen
@@ -61,6 +62,7 @@ class CDS_alg:
         :return: Zones points clusters
         """
 
+        # NEED TO OPTIMIZE
         model = DBSCAN(
             eps=self.scale_ * 1.5,
             min_samples=5,
@@ -136,6 +138,7 @@ class CDS_alg:
         :return: Zone deviation
         """
 
+        # NEED TO OPTIMIZE
         mse = lambda A, B: np.power(np.sum(A * B), 2)
         deviation = np.sum([
                 mse(np.hstack([point, [1.0]]), in_eq)
