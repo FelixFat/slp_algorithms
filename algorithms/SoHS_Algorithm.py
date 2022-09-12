@@ -57,10 +57,11 @@ class SoHS_alg:
         :return: L zone shape, Squares of heights
         """
 
+        # NEED TO OPTIMIZE
         zoneL = lib.divide_and_conquer(shape=self.shape_.copy())
         zoneS = np.divide(self.shape_, zoneL)
 
-        while zoneL[0] > 40 and zoneL[1] > 40:
+        while np.prod(zoneS) < 100.0:
             zoneL = zoneL / 2.0
             zoneS = zoneS * 2.0
         zoneL, zoneS = zoneL.astype(int), zoneS.astype(int)
@@ -133,5 +134,5 @@ if __name__ == '__main__':
     alg.fit()
     stop_time = time.time() - time_start
 
-    print(f"CDS algorithm result:\n\t- Point: {alg.point_}\n\t- Area: {alg.area_}")
+    print(f"SoHS algorithm result:\n\t- Point: {alg.point_}\n\t- Area: {alg.area_}")
     print(f"Time: {stop_time}")

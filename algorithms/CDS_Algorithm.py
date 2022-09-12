@@ -41,7 +41,7 @@ class CDS_alg:
             area = self.__zone_area(in_pc=cluster)
             deviation = self.__zone_deviation(in_pc=cluster, in_eq=equation)
 
-            score = self.__zone_estimate(in_pc=cluster, in_slope=slope, in_area=area, in_scatter=deviation)
+            score = self.__zone_estimate(in_pc=cluster, in_slope=slope, in_area=area, in_dev=deviation)
             print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Deviation: {deviation}. Score: {score}.")
 
             if score > self.score_:
@@ -64,10 +64,10 @@ class CDS_alg:
 
         # NEED TO OPTIMIZE
         model = DBSCAN(
-            eps=self.scale_ * 1.5,
-            min_samples=5,
+            eps=self.scale_ * 2.0,
+            min_samples=9,
             metric='euclidean',
-            algorithm='kd_tree',
+            algorithm='ball_tree',
             leaf_size=30
         )
         model.fit(X=in_pc)
@@ -138,29 +138,27 @@ class CDS_alg:
         :return: Zone deviation
         """
 
-        # NEED TO OPTIMIZE
-        mse = lambda A, B: np.power(np.sum(A * B), 2)
-        deviation = np.sum([
-                mse(np.hstack([point, [1.0]]), in_eq)
-                for point in in_pc
-        ]) / len(in_pc)
+        deviation = mean_squared_error(
+            np.zeros([len(in_pc)]),
+            np.sum(np.c_[in_pc, np.ones(len(in_pc))] * np.array([in_eq for _ in range(len(in_pc))]), axis=1)
+        )
 
         return deviation
 
-    def __zone_estimate(self, in_pc, in_slope, in_area, in_scatter):
+    def __zone_estimate(self, in_pc, in_slope, in_area, in_dev):
         """
         Zone estimate calculation
         :param in_slope:
         :param in_area:
-        :param in_scatter:
+        :param in_dev:
         :return:
         """
 
         area_cl = in_area / self.__zone_area(in_pc=in_pc)
-        scatter_cl = in_scatter / len(in_pc)
+        deviation_cl = in_dev / len(in_pc)
         slope_cl = in_slope / 15.0
 
-        est = area_cl * (1 - 0.5 * (scatter_cl + slope_cl))
+        est = area_cl * (1 - 0.5 * (deviation_cl + slope_cl))
 
         return est
 

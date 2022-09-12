@@ -66,8 +66,8 @@ class FPS_alg:
         # NEED TO OPTIMIZE
         equation, inliers = lib.RANSAC_plane(
             cloud=in_pc,
-            thresh=self.scale_ * 1.5,
-            max_iter=1000
+            thresh=self.scale_ * 2.0,
+            max_iter=int(len(in_pc) * 0.01)
         )
 
         if equation[2] < 0:
@@ -103,8 +103,8 @@ class FPS_alg:
 
         # NEED TO OPTIMIZE
         model = DBSCAN(
-            eps=self.scale_ * 1.5,
-            min_samples=5,
+            eps=self.scale_ * 2.0,
+            min_samples=9,
             metric='euclidean',
             algorithm='kd_tree',
             leaf_size=30
@@ -116,7 +116,6 @@ class FPS_alg:
             num_clusters.remove(-1)
 
         clusters = []
-        # NEED TO OPTIMIZE (calculations)
         for num in num_clusters:
             clusters.append(
                 np.array([
