@@ -63,6 +63,7 @@ class FPS_alg:
         :return: Plane equation, Inliers points
         """
 
+        # NEED TO OPTIMIZE
         equation, inliers = lib.RANSAC_plane(
             cloud=in_pc,
             thresh=self.scale_ * 1.5,
@@ -100,6 +101,7 @@ class FPS_alg:
         :return: Zones points clusters
         """
 
+        # NEED TO OPTIMIZE
         model = DBSCAN(
             eps=self.scale_ * 1.5,
             min_samples=5,
