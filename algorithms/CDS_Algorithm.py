@@ -20,8 +20,8 @@ class CDS_alg:
         self.inliers_ = np.empty([0, 3])
         self.equation_ = np.empty([0, 4])
 
-        self.slope_ = 0.0
         self.area_ = 0.0
+        self.slope_ = 0.0
         self.deviation_ = 0.0
 
         self.score_ = 0.0
@@ -42,14 +42,14 @@ class CDS_alg:
             deviation = self.__zone_deviation(in_pc=cluster, in_eq=equation)
 
             score = self.__zone_estimate(in_pc=cluster, in_slope=slope, in_area=area, in_dev=deviation)
-            print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Deviation: {deviation}. Score: {score}.")
+            #print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Deviation: {deviation}. Score: {score}.")
 
+            self.deviation_ = deviation
             if score > self.score_:
                 self.inliers_ = cluster
                 self.equation_ = equation
                 self.slope_ = slope
                 self.area_ = area
-                self.deviation_ = deviation
                 self.score_ = score
                 self.point_ = self.__point_determination(in_pc=cluster)
 
@@ -137,7 +137,6 @@ class CDS_alg:
         :param in_eq: Input zone equation
         :return: Zone deviation
         """
-
         deviation = mean_squared_error(
             np.zeros([len(in_pc)]),
             np.sum(np.c_[in_pc, np.ones(len(in_pc))] * np.array([in_eq for _ in range(len(in_pc))]), axis=1)
@@ -154,9 +153,11 @@ class CDS_alg:
         :return:
         """
 
-        area_cl = in_area / self.__zone_area(in_pc=in_pc)
-        deviation_cl = in_dev / len(in_pc)
-        slope_cl = in_slope / 15.0
+        area_cl, deviation_cl, slope_cl = 0.0, 0.0, 0.0
+        if in_area >= 0.126 and in_dev <= 0.05 and in_slope <= 15.0:
+            area_cl = in_area / self.__zone_area(in_pc=in_pc)
+            deviation_cl = in_dev / len(in_pc)
+            slope_cl = in_slope / 15.0
 
         est = area_cl * (1 - 0.5 * (deviation_cl + slope_cl))
 
@@ -176,15 +177,16 @@ class CDS_alg:
 
 if __name__ == '__main__':
     cloud_shape = np.array([640, 480])
-    cloud_step = 0.01
+    cloud_step = 0.00625
 
     gen = PC_gen(shape=cloud_shape, step=cloud_step)
-    cloud = gen.plane_gen(hiegh=0.5, noise=0.001, loss=0.0)
+    cloud = gen.plane_gen(hiegh=0.5, noise=0.0, slope=00.0, loss=0.0)
+    gen.visualization(cloud=cloud)
 
     time_start = time.time()
     alg = CDS_alg(in_data=cloud, in_scale=cloud_step)
     alg.fit()
     stop_time = time.time() - time_start
 
-    print(f"CDS algorithm result:\n\t- Point: {alg.point_}\n\t- Slope: {alg.slope_}\n\t- Area: {alg.area_}\n\t- Deviation: {alg.deviation_}")
+    print(f"CDS algorithm result:\n\t- Point: {alg.point_}\n\t- Area: {alg.area_}\n\t- Slope: {alg.slope_}\n\t- Deviation: {alg.deviation_}")
     print(f"Time: {stop_time}")

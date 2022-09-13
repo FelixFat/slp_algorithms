@@ -17,8 +17,11 @@ class SoHS_alg:
         self.scale_ = in_scale
 
         self.inliers_ = np.empty([0, 3])
+        self.equation_ = np.empty([0, 4])
 
         self.area_ = 0.0
+        self.slope_ = 0.0
+        self.deviation_ = 0.0
 
         self.score_ = np.empty([1, 1])
         self.point_ = np.empty([0, 3])
@@ -33,21 +36,33 @@ class SoHS_alg:
         self.score_ = np.empty(zones.shape[:2])
 
         soh = np.empty([0, 3])
+        soh_dev = np.empty([0])
 
         for row in range(self.score_.shape[0]):
             for col in range(self.score_.shape[1]):
                 self.score_[row, col] = self.__zone_estimate(zones[row, col])
 
-                if self.score_[row, col] is not None:
+                if np.isnan(self.score_[row, col]) == False:
                     flat = zones[row, col].transpose(2, 0, 1).reshape(3, -1)
                     flat = np.array([point for point in zip(flat[0], flat[1], flat[2])])
                     point = np.mean(flat, axis=0)
 
                     soh = np.vstack([soh, point])
+                    soh_dev = np.append(soh_dev, self.score_[row, col])
                     self.inliers_ = np.vstack([self.inliers_, flat])
 
-        self.area_ = self.__zone_area(in_pc=soh, in_zoneL=zoneL)
-        self.point_ = self.__point_determination(in_pc=soh)
+        area = self.__zone_area(in_pc=soh, in_zoneL=zoneL)
+        equation, slope = self.__zone_slope(in_pc=soh)
+        deviation = np.mean(soh_dev, axis=0)
+
+        #print(f">> Equation: {equation}; Slope: {slope}; Area: {area}; Deviation: {deviation}.")
+
+        self.deviation_ = deviation
+        if area >= 0.126 and slope <= 15.0 and deviation <= 0.05:
+            self.equation_ = equation
+            self.area_ = area
+            self.slope_ = slope
+            self.point_ = self.__point_determination(in_pc=soh)
 
         return None
 
@@ -94,7 +109,7 @@ class SoHS_alg:
         mean_h = np.mean(height_flat)
         std_h = np.std(height_flat)
 
-        var_h = std_h / mean_h if diff_h <= 0.5 or std_h <= 0.1 else None
+        var_h = std_h / mean_h if diff_h <= 0.5 or std_h <= 0.1 else np.nan
 
         return var_h
 
@@ -110,6 +125,36 @@ class SoHS_alg:
 
         return area
 
+    def __zone_slope(self, in_pc):
+        """
+        Zone equation and slope calculation
+        (based on https://www.programcreek.com/python/?CodeExample=fit+plane)
+        :param in_pc: Input point cloud
+        :return: Zone equation, Zone slope
+        """
+
+        mean = np.mean(in_pc, axis=0)
+        xyz_c = in_pc - mean[None, :]
+        l, v = np.linalg.eig(xyz_c.T.dot(xyz_c))
+        abc = v[:, np.argmin(l)]
+        d = -np.sum(abc * mean)
+
+        equation = np.r_[abc, d] / np.linalg.norm(abc)
+        if equation[2] < 0:
+            equation = np.array([equation[1], equation[0], -equation[2], -equation[3]])
+
+        # rad_phi = (a, b) / (magnitude(a) * magnitude(b))
+        # grad_phi = abs(arccos(rad_phi) * 180 / PI)
+        normal = np.array([0.0, 0.0, 1.0])
+        slope = np.abs(
+            np.arccos(
+                np.dot(normal, equation[:3]) /
+                (np.linalg.norm(normal) * np.linalg.norm(equation[:3]))
+            ) * 180.0 / np.pi
+        )
+
+        return equation, slope
+
     def __point_determination(self, in_pc):
         """
         Landing point determination with geometric median
@@ -124,15 +169,16 @@ class SoHS_alg:
 
 if __name__ == '__main__':
     cloud_shape = np.array([640, 480])
-    cloud_step = 0.01
+    cloud_step = 0.00625
 
     gen = PC_gen(shape=cloud_shape, step=cloud_step)
-    cloud = gen.plane_gen(hiegh=0.5, noise=0.001, loss=0.0)
+    cloud = gen.plane_gen(hiegh=0.5, noise=0.0, slope=00.0, loss=0.0)
+    gen.visualization(cloud=cloud)
 
     time_start = time.time()
     alg = SoHS_alg(in_data=cloud, in_shape=cloud_shape, in_scale=cloud_step)
     alg.fit()
     stop_time = time.time() - time_start
 
-    print(f"SoHS algorithm result:\n\t- Point: {alg.point_}\n\t- Area: {alg.area_}")
+    print(f"SoHS algorithm result:\n\t- Point: {alg.point_}\n\t- Area: {alg.area_}\n\t- Slope: {alg.slope_}\n\t- Deviation: {alg.deviation_}")
     print(f"Time: {stop_time}")

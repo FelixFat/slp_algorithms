@@ -19,8 +19,9 @@ class FPS_alg:
         self.inliers_ = np.empty([0, 3])
         self.equation_ = np.empty([0, 4])
 
-        self.slope_ = 0.0
         self.area_ = 0.0
+        self.slope_ = 0.0
+        self.deviation_ = 0.0
 
         self.point_ = np.empty([0, 3])
 
@@ -41,16 +42,18 @@ class FPS_alg:
             clusters = self.__zone_clustering(in_pc=cloud)
             for cluster in clusters:
                 area = self.__zone_area(in_pc=cluster)
+                deviation = np.std(cluster[:, 2], axis=0) / np.mean(cluster[:, 2], axis=0)
 
-                print(f">> Equation: {equation}; Slope: {slope}; Area: {area}.")
+                #print(f">> Equation: {equation}; Slope: {slope}; Area: {area}.")
 
-                # AREA_min = 0.126 m^2
-                # ANGLE_max = 15.0 grad
-                if (slope <= 15.0 and area >= 0.126) and (slope < self.slope_ or area > self.area_):
+                self.deviation_ = deviation
+                if (area >= 0.126 and slope <= 15.0 and deviation <= 0.05) and \
+                    (area >=self.area_ or slope <= self.slope_ or deviation <= self.deviation_):
                     self.inliers_ = cluster
                     self.equation_ = equation
-                    self.slope_ = slope
                     self.area_ = area
+                    self.slope_ = slope
+                    self.deviation_ = deviation
                     self.point_ = self.__point_determination(in_pc=cluster)
             point_cloud = np.delete(point_cloud, inliers, axis=0)
 
@@ -155,15 +158,16 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
     cloud_shape = np.array([640, 480])
-    cloud_step = 0.01
+    cloud_step = 0.00625
 
     gen = PC_gen(shape=cloud_shape, step=cloud_step)
-    cloud = gen.plane_gen(hiegh=0.5, noise=0.001, loss=0.0)
+    cloud = gen.plane_gen(hiegh=0.5, noise=0.0, slope=00.0, loss=0.0)
+    gen.visualization(cloud=cloud)
 
     time_start = time.time()
     alg = FPS_alg(in_data=cloud, in_scale=cloud_step)
     alg.fit()
     stop_time = time.time() - time_start
 
-    print(f"FPS algorithm result:\n\t- Point: {alg.point_}\n\t- Slope: {alg.slope_}\n\t- Area: {alg.area_}")
+    print(f"FPS algorithm result:\n\t- Point: {alg.point_}\n\t- Area: {alg.area_}\n\t- Slope: {alg.slope_}\n\t- Deviation: {alg.deviation_}")
     print(f"Time: {stop_time}")
